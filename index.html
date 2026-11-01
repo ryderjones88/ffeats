@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Epic Eats — Grocery List Generator | Fictive Fitness</title>
+  <meta name="description" content="Generate a custom grocery list from Epic Eats Vol. 1 character-inspired recipes. Fictive Fitness — Train like a Nerd. Live like a Hero." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #0d0d0d;
+      color: #f0f0f0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #FF1B6B44; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #FF1B6B88; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    // ─── All 18 recipes from Epic Eats Vol. 1 ─────────────────────────────
+    const RECIPES = [
+      {
+        id: "buster-bars",
+        name: "Buster Bars",
+        character: "Cloud Strife",
+        source: "Final Fantasy VII",
+        servingUnit: "bars",
+        baseServings: 8,
+        emoji: "⚔️",
+        ingredients: [
+          { name: "Rolled oats", amount: 2, unit: "cups", category: "pantry" },
+          { name: "Peanut butter", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Honey", amount: 3, unit: "tbsp", category: "pantry" },
+          { name: "Almond flour", amount: 0.5, unit: "cup", category: "pantry" },
+          { name: "Dark chocolate chips", amount: 0.5, unit: "cup", category: "pantry" },
+          { name: "Vanilla extract", amount: 1, unit: "tsp", category: "pantry" },
+          { name: "Sea salt", amount: 1, unit: "pinch", category: "spices" },
+          { name: "White chocolate chips", amount: 2, unit: "tbsp", category: "pantry" },
+          { name: "Matcha powder", amount: 0.5, unit: "tsp", category: "pantry" },
+        ],
+      },
+      {
+        id: "mistborn-yogurt",
+        name: '"Mistborn Mix" Yogurt Bowl',
+        character: "Vin",
+        source: "Mistborn — Brandon Sanderson",
+        servingUnit: "bowls",
+        baseServings: 1,
+        emoji: "🌑",
+        ingredients: [
+          { name: "Full-fat Greek yogurt", amount: 1, unit: "cup", category: "dairy" },
+          { name: "Vanilla protein powder", amount: 1, unit: "scoop", category: "supplements", optional: true },
+          { name: "Banana", amount: 1, unit: "", category: "produce" },
+          { name: "Blueberries", amount: 1, unit: "large handful", category: "produce" },
+          { name: "Granola", amount: 3, unit: "tbsp", category: "pantry" },
+          { name: "Honey", amount: 2, unit: "tbsp", category: "pantry" },
+          { name: "Almonds or walnuts", amount: 1, unit: "small handful", category: "pantry" },
+          { name: "Cinnamon", amount: 1, unit: "pinch", category: "spices" },
+        ],
+      },
+      {
+        id: "direwolf-jerky",
+        name: '"Direwolf Jerky Packs"',
+        character: "Arya Stark",
+        source: "A Song of Ice & Fire",
+        servingUnit: "packs",
+        baseServings: 4,
+        emoji: "🐺",
+        ingredients: [
+          { name: "Beef or turkey jerky (low-sodium)", amount: 200, unit: "g", category: "protein" },
+          { name: "Raw almonds", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Dried cranberries", amount: 0.5, unit: "cup", category: "pantry" },
+          { name: "Dried apricots", amount: 0.5, unit: "cup", category: "pantry" },
+        ],
+      },
+      {
+        id: "white-wolf-shake",
+        name: '"White Wolf" Protein Shake',
+        character: "Geralt of Rivia",
+        source: "The Witcher — Sapkowski",
+        servingUnit: "shakes",
+        baseServings: 1,
+        emoji: "🐺",
+        ingredients: [
+          { name: "Oat milk (unsweetened)", amount: 1.5, unit: "cups", category: "dairy" },
+          { name: "Vanilla whey isolate", amount: 1, unit: "scoop", category: "supplements" },
+          { name: "Banana (frozen)", amount: 1, unit: "", category: "produce" },
+          { name: "Almond butter", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Honey", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "White pepper", amount: 1, unit: "pinch", category: "spices" },
+          { name: "Ashwagandha powder", amount: 0.5, unit: "tsp", category: "supplements", optional: true },
+        ],
+      },
+      {
+        id: "nora-harvest-bowl",
+        name: '"Nora Harvest Bowl"',
+        character: "Aloy",
+        source: "Horizon Zero Dawn",
+        servingUnit: "servings",
+        baseServings: 2,
+        emoji: "🏹",
+        ingredients: [
+          { name: "Ground turkey", amount: 400, unit: "g", category: "protein" },
+          { name: "Sweet potato (large)", amount: 1, unit: "", category: "produce" },
+          { name: "Apple", amount: 1, unit: "", category: "produce" },
+          { name: "Onion (medium)", amount: 1, unit: "", category: "produce" },
+          { name: "Olive oil", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Cinnamon", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Smoked paprika", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Salt and pepper", amount: 1, unit: "to taste", category: "spices" },
+          { name: "Shredded parmesan", amount: 30, unit: "g", category: "dairy" },
+          { name: "Fresh thyme", amount: 1, unit: "few sprigs", category: "produce" },
+        ],
+      },
+      {
+        id: "spartans-table",
+        name: 'The "Spartan\'s Table"',
+        character: "Kratos",
+        source: "God of War",
+        servingUnit: "servings",
+        baseServings: 2,
+        emoji: "🪓",
+        ingredients: [
+          { name: "Brown rice (dry)", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Sweet potato (large)", amount: 1, unit: "", category: "produce" },
+          { name: "Chicken breasts or thighs", amount: 2, unit: "", category: "protein" },
+          { name: "Olive oil", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Garlic powder", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Smoked paprika", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Salt and pepper", amount: 1, unit: "to taste", category: "spices" },
+          { name: "Teriyaki or soy-ginger sauce", amount: 1, unit: "bottle", category: "condiments" },
+          { name: "Sesame seeds", amount: 2, unit: "tbsp", category: "pantry" },
+          { name: "Green onions", amount: 2, unit: "", category: "produce" },
+        ],
+      },
+      {
+        id: "piltover-date-bombs",
+        name: '"Piltover Date Bombs"',
+        character: "Vi",
+        source: "Arcane — Riot Games / Netflix",
+        servingUnit: "dates",
+        baseServings: 12,
+        emoji: "💥",
+        ingredients: [
+          { name: "Medjool dates (large, pitted)", amount: 12, unit: "", category: "produce" },
+          { name: "Almond butter", amount: 4, unit: "tbsp", category: "pantry" },
+          { name: "Dark chocolate chips", amount: 0.5, unit: "cup", category: "pantry" },
+          { name: "Flake sea salt", amount: 1, unit: "to taste", category: "spices" },
+          { name: "Coconut oil", amount: 1, unit: "tsp", category: "condiments", optional: true },
+        ],
+      },
+      {
+        id: "directors-dip",
+        name: '"Director\'s Dip"',
+        character: "Jesse Faden",
+        source: "Control — Remedy Games",
+        servingUnit: "servings",
+        baseServings: 4,
+        emoji: "🔴",
+        ingredients: [
+          { name: "Full-fat cottage cheese", amount: 2, unit: "cups", category: "dairy" },
+          { name: "Shredded sharp cheddar", amount: 1, unit: "cup", category: "dairy" },
+          { name: "Diced green chilis (canned, 4oz)", amount: 1, unit: "can", category: "pantry" },
+          { name: "Smoked paprika", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Garlic powder", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Cumin", amount: 0.5, unit: "tsp", category: "spices" },
+          { name: "Hot sauce", amount: 1, unit: "to taste", category: "condiments" },
+          { name: "Tortilla chips", amount: 1, unit: "bag", category: "pantry" },
+        ],
+      },
+      {
+        id: "mako-infusion",
+        name: '"Mako Infusion" Protein Shake',
+        character: "Aerith Gainsborough",
+        source: "Final Fantasy VII",
+        servingUnit: "shakes",
+        baseServings: 1,
+        emoji: "🌿",
+        ingredients: [
+          { name: "Oat milk or almond milk", amount: 1.5, unit: "cups", category: "dairy" },
+          { name: "Vanilla whey isolate", amount: 1, unit: "scoop", category: "supplements" },
+          { name: "Banana (frozen)", amount: 1, unit: "", category: "produce" },
+          { name: "Ceremonial-grade matcha powder", amount: 1, unit: "tsp", category: "pantry" },
+          { name: "Honey", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Jasmine extract", amount: 1, unit: "drop", category: "pantry", optional: true },
+          { name: "Spirulina", amount: 0.5, unit: "tsp", category: "supplements", optional: true },
+        ],
+      },
+      {
+        id: "rpd-breakfast",
+        name: '"R.P.D. Breakfast"',
+        character: "Leon S. Kennedy",
+        source: "Resident Evil 2 — Capcom",
+        servingUnit: "servings",
+        baseServings: 1,
+        emoji: "🥚",
+        ingredients: [
+          { name: "Large eggs", amount: 3, unit: "", category: "protein" },
+          { name: "Full-fat cottage cheese", amount: 0.5, unit: "cup", category: "dairy" },
+          { name: "Butter", amount: 1, unit: "tbsp", category: "dairy" },
+          { name: "Fresh chives", amount: 1, unit: "small bunch", category: "produce" },
+          { name: "Whole wheat bread", amount: 2, unit: "slices", category: "pantry" },
+          { name: "Honey", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Flake sea salt", amount: 1, unit: "pinch", category: "spices" },
+          { name: "Almond butter", amount: 1, unit: "tbsp", category: "pantry", optional: true },
+          { name: "Banana", amount: 1, unit: "", category: "produce", optional: true },
+        ],
+      },
+      {
+        id: "banquet-plate",
+        name: 'The "Sweet or Sour Banquet Plate"',
+        character: "Adolin Kholin",
+        source: "Stormlight Archive — Sanderson",
+        servingUnit: "servings",
+        baseServings: 2,
+        emoji: "🗡️",
+        ingredients: [
+          { name: "Brown rice (dry)", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Sweet potato (large)", amount: 1, unit: "", category: "produce" },
+          { name: "Chicken breasts or thighs", amount: 2, unit: "", category: "protein" },
+          { name: "Olive oil", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Garlic powder", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Smoked paprika", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Sesame seeds", amount: 2, unit: "tbsp", category: "pantry" },
+          { name: "Green onions", amount: 2, unit: "", category: "produce" },
+          { name: "Sweet soy-ginger glaze", amount: 1, unit: "bottle", category: "condiments" },
+          { name: "Gochujang or sriracha", amount: 2, unit: "tbsp", category: "condiments", optional: true },
+        ],
+      },
+      {
+        id: "father-son-porridge",
+        name: "Father and Son Porridge",
+        character: "Kratos & Atreus",
+        source: "God of War",
+        servingUnit: "bowls",
+        baseServings: 2,
+        emoji: "🪓",
+        ingredients: [
+          { name: "Steel-cut oats", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Raw honey", amount: 2.5, unit: "tbsp", category: "pantry" },
+          { name: "Mixed berries (fresh or frozen)", amount: 1, unit: "cup", category: "produce" },
+          { name: "Sea salt", amount: 1, unit: "pinch", category: "spices" },
+          { name: "Walnuts or almonds", amount: 0.5, unit: "cup", category: "pantry", optional: true },
+          { name: "Nut butter", amount: 2, unit: "tbsp", category: "pantry", optional: true },
+          { name: "Vanilla protein powder", amount: 0.5, unit: "scoop", category: "supplements", optional: true },
+        ],
+      },
+      {
+        id: "kbbq-plate",
+        name: '"Seventh Heaven K-BBQ Plate"',
+        character: "Tifa Lockhart",
+        source: "Final Fantasy VII",
+        servingUnit: "servings",
+        baseServings: 2,
+        emoji: "🥊",
+        ingredients: [
+          { name: "Boneless skinless chicken thighs", amount: 4, unit: "", category: "protein" },
+          { name: "Soy sauce or tamari", amount: 3, unit: "tbsp", category: "condiments" },
+          { name: "Gochujang (Korean chili paste)", amount: 2, unit: "tbsp", category: "condiments" },
+          { name: "Sesame oil", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Honey", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Garlic cloves", amount: 4, unit: "", category: "produce" },
+          { name: "Fresh ginger", amount: 1, unit: "tsp", category: "produce" },
+          { name: "Rice vinegar", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Jasmine rice", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Cucumber", amount: 1, unit: "", category: "produce" },
+          { name: "Sesame seeds", amount: 2, unit: "tbsp", category: "pantry" },
+          { name: "Green onions", amount: 2, unit: "", category: "produce" },
+          { name: "Kimchi", amount: 1, unit: "jar", category: "condiments", optional: true },
+        ],
+      },
+      {
+        id: "no-ones-stir-fry",
+        name: '"No One\'s Stir-Fry"',
+        character: "Arya Stark",
+        source: "A Song of Ice & Fire",
+        servingUnit: "servings",
+        baseServings: 2,
+        emoji: "🗡️",
+        ingredients: [
+          { name: "Chickpeas (15oz cans)", amount: 2, unit: "cans", category: "pantry" },
+          { name: "Soy sauce or tamari", amount: 2, unit: "tbsp", category: "condiments" },
+          { name: "Rice vinegar", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Hoisin sauce", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Honey or maple syrup", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Sesame oil", amount: 1, unit: "tsp", category: "condiments" },
+          { name: "Chili flakes", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Garlic cloves", amount: 3, unit: "", category: "produce" },
+          { name: "Fresh ginger", amount: 1, unit: "tsp", category: "produce" },
+          { name: "Cornstarch", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Rice (for serving)", amount: 1, unit: "cup", category: "pantry" },
+        ],
+      },
+      {
+        id: "wasteland-survivor",
+        name: "The Wasteland Survivor Bowl",
+        character: "Furiosa",
+        source: "Mad Max: Fury Road",
+        servingUnit: "servings",
+        baseServings: 2,
+        emoji: "🔧",
+        ingredients: [
+          { name: "Quinoa", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Sweet potato (large)", amount: 1, unit: "", category: "produce" },
+          { name: "Chickpeas (15oz can)", amount: 1, unit: "can", category: "pantry" },
+          { name: "Baby spinach or kale", amount: 2, unit: "large handfuls", category: "produce" },
+          { name: "Red bell pepper", amount: 1, unit: "", category: "produce" },
+          { name: "Olive oil", amount: 1, unit: "tbsp", category: "condiments" },
+          { name: "Smoked paprika", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Cumin", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Tahini", amount: 3, unit: "tbsp", category: "pantry" },
+          { name: "Lemon", amount: 1, unit: "", category: "produce" },
+          { name: "Garlic cloves", amount: 1, unit: "", category: "produce" },
+          { name: "Flat-leaf parsley", amount: 1, unit: "small handful", category: "produce" },
+          { name: "Eggs or grilled chicken (optional protein)", amount: 2, unit: "", category: "protein", optional: true },
+        ],
+      },
+      {
+        id: "berry-powder-shake",
+        name: "Berry-Powder Shake",
+        character: "Vi",
+        source: "Arcane — Riot Games / Netflix",
+        servingUnit: "shakes",
+        baseServings: 1,
+        emoji: "🫐",
+        ingredients: [
+          { name: "Frozen berries (blueberry / mixed / cherry blend)", amount: 1, unit: "cup", category: "produce" },
+          { name: "Vanilla Greek yogurt", amount: 0.5, unit: "cup", category: "dairy" },
+          { name: "Milk (dairy or oat)", amount: 1, unit: "cup", category: "dairy" },
+          { name: "Protein powder (whey or plant)", amount: 1, unit: "scoop", category: "supplements" },
+        ],
+      },
+      {
+        id: "foxhound-ration",
+        name: "FOXHOUND Field Ration",
+        character: "Solid Snake",
+        source: "Metal Gear Solid — Konami",
+        servingUnit: "servings",
+        baseServings: 1,
+        emoji: "📦",
+        ingredients: [
+          { name: "Full-fat cottage cheese (4% milkfat)", amount: 1, unit: "cup", category: "dairy" },
+          { name: "Sea salt", amount: 1, unit: "pinch", category: "spices" },
+          { name: "Casein protein powder", amount: 1, unit: "scoop", category: "supplements", optional: true },
+          { name: "Raw honey", amount: 2, unit: "tbsp", category: "pantry", optional: true },
+          { name: "Natural peanut butter", amount: 1.5, unit: "tbsp", category: "pantry", optional: true },
+          { name: "Chili crisp (Fly By Jing / Lao Gan Ma)", amount: 1, unit: "tsp", category: "condiments", optional: true },
+        ],
+      },
+      {
+        id: "frozen-bark",
+        name: "Beyond the Wall Frozen Bark",
+        character: "Jon Snow",
+        source: "A Song of Ice & Fire",
+        servingUnit: "servings",
+        baseServings: 5,
+        emoji: "❄️",
+        ingredients: [
+          { name: "Full-fat Greek yogurt (5%+)", amount: 2, unit: "cups", category: "dairy" },
+          { name: "Raw honey", amount: 3, unit: "tbsp", category: "pantry" },
+          { name: "Vanilla extract", amount: 1, unit: "tsp", category: "pantry" },
+          { name: "Sea salt", amount: 1, unit: "pinch", category: "spices" },
+          { name: "Dark chocolate chips (70%+)", amount: 0.5, unit: "cup", category: "pantry" },
+          { name: "Mixed berries (blueberries + raspberries)", amount: 0.5, unit: "cup", category: "produce" },
+          { name: "Flake sea salt", amount: 1, unit: "pinch", category: "spices" },
+          { name: "Granola", amount: 2, unit: "tbsp", category: "pantry", optional: true },
+          { name: "Nut butter", amount: 1, unit: "tbsp", category: "pantry", optional: true },
+        ],
+      },
+      {
+        id: "hero-fuel-bowl",
+        name: "The Hero Fuel Breakfast Bowl",
+        character: "Every Hero",
+        source: "Fictive Fitness Staple",
+        servingUnit: "bowls",
+        baseServings: 1,
+        emoji: "🏆",
+        ingredients: [
+          { name: "Ripe banana (for granola)", amount: 1, unit: "", category: "produce" },
+          { name: "Rolled oats", amount: 1, unit: "cup", category: "pantry" },
+          { name: "Cinnamon", amount: 1, unit: "tsp", category: "spices" },
+          { name: "Honey", amount: 1, unit: "tbsp", category: "pantry" },
+          { name: "Dark chocolate chips", amount: 1, unit: "small handful", category: "pantry" },
+          { name: "Full-fat or 2% Greek yogurt", amount: 1, unit: "cup", category: "dairy" },
+          { name: "Vanilla whey protein isolate", amount: 1, unit: "scoop", category: "supplements", optional: true },
+          { name: "Banana (sliced, for topping)", amount: 1, unit: "", category: "produce" },
+          { name: "Blueberries", amount: 1, unit: "large handful", category: "produce" },
+          { name: "Raspberries", amount: 1, unit: "large handful", category: "produce" },
+          { name: "Peanut or almond butter", amount: 2, unit: "tbsp", category: "pantry" },
+        ],
+      },
+    ];
+
+    const CATEGORY_META = {
+      protein:     { label: "Meat & Protein",        icon: "🥩" },
+      dairy:       { label: "Dairy & Refrigerated",  icon: "🧀" },
+      produce:     { label: "Produce",                icon: "🥬" },
+      pantry:      { label: "Pantry & Dry Goods",     icon: "🥫" },
+      condiments:  { label: "Oils, Sauces & Pastes",  icon: "🫙" },
+      spices:      { label: "Herbs & Spices",         icon: "🌶️" },
+      supplements: { label: "Supplements",            icon: "💊" },
+    };
+
+    const CATEGORY_ORDER = ["protein","dairy","produce","pantry","condiments","spices","supplements"];
+
+    function fmtAmount(n) {
+      if (!n || n === 0) return "";
+      const FRAC_MAP = { 0.25:"¼", 0.5:"½", 0.75:"¾", 0.33:"⅓", 0.67:"⅔" };
+      const whole = Math.floor(n);
+      const frac = Math.round((n - whole) * 100) / 100;
+      const fracStr = FRAC_MAP[frac] || (frac > 0 ? frac.toFixed(1).replace(/^0/,"") : "");
+      if (whole === 0) return fracStr || String(n);
+      if (fracStr) return `${whole}${fracStr}`;
+      return String(whole);
+    }
+
+    // ─── Styles ──────────────────────────────────────────────────────────────
+    const css = `
+      .ff-title { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 0.05em; }
+      .recipe-card {
+        border: 1px solid #222; border-radius: 10px; padding: 16px;
+        cursor: pointer; transition: all 0.18s; background: #131313;
+        position: relative; overflow: hidden; user-select: none;
+      }
+      .recipe-card:hover { border-color: #FF1B6B66; background: #1a1a1a; }
+      .recipe-card.active { border-color: #FF1B6B; background: #1a0d11; }
+      .recipe-card.active::before {
+        content: ''; position: absolute; top: 0; left: 0;
+        width: 3px; height: 100%;
+        background: linear-gradient(to bottom, #FF1B6B, #FF6B9D);
+      }
+      .qty-btn {
+        width: 30px; height: 30px; border-radius: 5px;
+        border: 1px solid #FF1B6B; background: transparent; color: #FF1B6B;
+        cursor: pointer; font-size: 17px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.15s; line-height: 1; flex-shrink: 0;
+      }
+      .qty-btn:hover { background: #FF1B6B; color: #0d0d0d; }
+      .qty-input {
+        width: 46px; background: #1f1f1f; border: 1px solid #333;
+        border-radius: 5px; color: #f0f0f0; text-align: center;
+        padding: 5px 2px; font-size: 14px; font-family: Poppins, sans-serif;
+      }
+      .qty-input:focus { outline: none; border-color: #FF1B6B; }
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+      .tab-btn {
+        padding: 11px 22px; border: none; border-bottom: 2px solid transparent;
+        background: transparent; color: #555; cursor: pointer;
+        font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600;
+        transition: all 0.18s; letter-spacing: 0.5px; white-space: nowrap;
+      }
+      .tab-btn:hover { color: #aaa; }
+      .tab-btn.active { color: #FF1B6B; border-bottom-color: #FF1B6B; }
+      .primary-btn {
+        background: linear-gradient(135deg, #FF1B6B, #FF6B9D); color: #fff;
+        border: none; border-radius: 8px; padding: 13px 30px;
+        font-family: 'Bebas Neue', Impact, sans-serif; font-size: 19px;
+        letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+        box-shadow: 0 4px 24px #FF1B6B44;
+      }
+      .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px #FF1B6B66; }
+      .primary-btn:disabled { opacity: 0.35; cursor: default; transform: none; box-shadow: none; }
+      .ghost-btn {
+        background: #1a1a1a; color: #888; border: 1px solid #2a2a2a;
+        border-radius: 7px; padding: 10px 18px;
+        font-family: Poppins, sans-serif; font-size: 13px;
+        cursor: pointer; transition: all 0.18s;
+      }
+      .ghost-btn:hover { border-color: #00E5FF; color: #00E5FF; }
+      .ghost-btn.copied { border-color: #4ade80; color: #4ade80; }
+      .ingredient-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 9px 14px; border-radius: 7px; margin-bottom: 5px;
+        background: #131313; border: 1px solid #1d1d1d; gap: 12px;
+      }
+      .ingredient-row:hover { border-color: #2a2a2a; }
+      .badge {
+        background: #FF1B6B; color: #fff; border-radius: 12px;
+        padding: 2px 9px; font-size: 11px; font-weight: 700;
+        font-family: Poppins, sans-serif; flex-shrink: 0;
+      }
+      .toggle-wrap {
+        display: flex; align-items: center; gap: 9px;
+        cursor: pointer; user-select: none;
+        font-size: 12px; color: #777; font-family: Poppins, sans-serif;
+      }
+      .toggle-track {
+        width: 38px; height: 21px; background: #2a2a2a;
+        border-radius: 11px; position: relative; transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .toggle-track.on { background: #FF1B6B; }
+      .toggle-thumb {
+        position: absolute; top: 2.5px; left: 2.5px;
+        width: 16px; height: 16px; background: #fff;
+        border-radius: 50%; transition: left 0.2s;
+      }
+      .toggle-track.on .toggle-thumb { left: 19.5px; }
+      .pill {
+        background: #1a0d11; border: 1px solid #FF1B6B33;
+        border-radius: 20px; padding: 4px 13px;
+        font-size: 12px; font-family: Poppins, sans-serif; color: #FF6B9D;
+        display: flex; gap: 6px; align-items: center; white-space: nowrap;
+      }
+      .empty-state { text-align: center; padding: 70px 20px; color: #444; }
+      @media (max-width: 600px) {
+        .recipe-grid { grid-template-columns: 1fr !important; }
+        .header-inner { flex-direction: column; align-items: flex-start !important; }
+        .tab-btn { padding: 10px 14px; font-size: 12px; }
+      }
+    `;
+
+    // ─── Password Gate ────────────────────────────────────────────────────
+    const ACCESS_CODE = "ffepic26!";
+    // Remember the code on this device for 30 days
+    const EE_KEY = "ee_unlocked_v2";
+    const isStoredUnlocked = () => { try { const v = JSON.parse(localStorage.getItem(EE_KEY) || "null"); return !!v && Date.now() - v.ts < 30*24*60*60*1000; } catch { return false; } };
+    const storeUnlocked = () => { try { localStorage.setItem(EE_KEY, JSON.stringify({ ts: Date.now() })); } catch {} };
+
+    function PasswordGate({ onUnlock }) {
+      const [input, setInput] = useState("");
+      const [shake, setShake] = useState(false);
+      const [err,   setErr]   = useState(false);
+
+      const attempt = () => {
+        if (input.trim().toLowerCase() === ACCESS_CODE) {
+          storeUnlocked();
+          onUnlock();
+        } else {
+          setErr(true); setShake(true);
+          setTimeout(() => setShake(false), 500);
+          setTimeout(() => setErr(false), 2000);
+          setInput("");
+        }
+      };
+
+      return (
+        <div style={{ minHeight:"100vh", background:"#0d0d0d", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, backgroundImage:"radial-gradient(ellipse at 50% 40%,#1a0a0f 0%,transparent 70%)" }}>
+          <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+          <div style={{ fontSize:9, color:"#FF1B6B", fontWeight:700, letterSpacing:3, marginBottom:12, fontFamily:"Poppins,sans-serif" }}>FICTIVE FITNESS</div>
+          <h1 style={{ fontFamily:"'Bebas Neue',Impact,sans-serif", fontSize:"clamp(40px,8vw,72px)", lineHeight:1, color:"#fff", letterSpacing:"0.05em", textAlign:"center", marginBottom:6 }}>EPIC EATS</h1>
+          <div style={{ fontFamily:"'Bebas Neue',Impact,sans-serif", fontSize:"clamp(13px,2vw,19px)", color:"#FF1B6B", letterSpacing:"0.12em", marginBottom:40 }}>GROCERY LIST GENERATOR</div>
+          <div style={{ width:"100%", maxWidth:360, background:"#111", border:`1px solid ${err?"#ff4444":"#1f1f1f"}`, borderRadius:14, padding:"28px 24px", textAlign:"center", transition:"border-color 0.2s", animation:shake?"shake 0.4s ease":"none" }}>
+            <div style={{ fontSize:32, marginBottom:12 }}>🔒</div>
+            <div style={{ fontSize:13, color:"#666", marginBottom:20, lineHeight:1.6, fontFamily:"Poppins,sans-serif" }}>Included with Guild Vanguard.<br/>Enter your access code to continue.</div>
+            <input
+              type="password"
+              placeholder="Access code"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key==="Enter" && attempt()}
+              style={{ width:"100%", background:"#0d0d0d", border:`1px solid ${err?"#ff4444":"#2a2a2a"}`, borderRadius:8, color:"#f0f0f0", padding:"12px 16px", fontSize:15, fontFamily:"Poppins,sans-serif", marginBottom:14, outline:"none", textAlign:"center", letterSpacing:2, transition:"border-color 0.2s" }}
+            />
+            {err && <div style={{ fontSize:12, color:"#ff4444", marginBottom:12, fontFamily:"Poppins,sans-serif" }}>Incorrect code. Try again.</div>}
+            <button onClick={attempt} style={{ width:"100%", background:"linear-gradient(135deg,#FF1B6B,#ff6b9d)", color:"#fff", border:"none", borderRadius:9, padding:"13px", fontFamily:"'Bebas Neue',Impact,sans-serif", fontSize:19, letterSpacing:2, cursor:"pointer", boxShadow:"0 4px 24px #FF1B6B44" }}>
+              UNLOCK ACCESS
+            </button>
+          </div>
+          <div style={{ marginTop:28, fontSize:11, color:"#2a2a2a", fontFamily:"Poppins,sans-serif" }}>
+            <a href="https://fictivefitness.substack.com" target="_blank" style={{ color:"#2a2a2a", textDecoration:"none" }}>fictivefitness.substack.com</a>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── App ──────────────────────────────────────────────────────────────
+    function App() {
+      const [unlocked, setUnlocked]   = useState(() => isStoredUnlocked());
+      const [selected, setSelected] = useState({});
+      const [copied, setCopied]     = useState(false);
+      const [inclOpt, setInclOpt]   = useState(false);
+      const [tab, setTab]           = useState("recipes");
+
+      const toggleRecipe = (id) => {
+        setSelected(prev => {
+          if (prev[id]) { const n = {...prev}; delete n[id]; return n; }
+          const r = RECIPES.find(x => x.id === id);
+          return { ...prev, [id]: r.baseServings };
+        });
+      };
+
+      const setQty = (id, val) => {
+        const r = RECIPES.find(x => x.id === id);
+        const step = r.baseServings >= 6 ? r.baseServings / 2 : 1;
+        const n = Math.max(step, parseFloat(val) || step);
+        setSelected(prev => ({ ...prev, [id]: n }));
+      };
+
+      const nudge = (id, dir) => {
+        const r = RECIPES.find(x => x.id === id);
+        const step = r.baseServings >= 6 ? r.baseServings / 2 : 1;
+        const cur = selected[id] || r.baseServings;
+        setQty(id, cur + dir * step);
+      };
+
+      const selCount = Object.keys(selected).length;
+
+      // Build consolidated grocery list
+      const groceryList = useMemo(() => {
+        const map = {};
+        for (const r of RECIPES) {
+          const qty = selected[r.id];
+          if (!qty) continue;
+          const mult = qty / r.baseServings;
+          for (const ing of r.ingredients) {
+            if (ing.optional && !inclOpt) continue;
+            const key = ing.name.toLowerCase().trim();
+            if (!map[key]) map[key] = { name: ing.name, category: ing.category, optional: !!ing.optional, byUnit: {} };
+            if (!ing.optional) map[key].optional = false;
+            const u = ing.unit || "";
+            map[key].byUnit[u] = (map[key].byUnit[u] || 0) + ing.amount * mult;
+          }
+        }
+        const grouped = {};
+        CATEGORY_ORDER.forEach(c => grouped[c] = []);
+        for (const item of Object.values(map)) {
+          const quantities = Object.entries(item.byUnit).map(([unit, amount]) => ({
+            display: [fmtAmount(amount), unit].filter(Boolean).join(" "),
+          }));
+          grouped[item.category]?.push({ ...item, quantities });
+        }
+        return grouped;
+      }, [selected, inclOpt]);
+
+      const totalItems = Object.values(groceryList).reduce((s,a) => s + a.length, 0);
+
+      const copyList = () => {
+        const lines = ["🛒 EPIC EATS — GROCERY LIST", "═══════════════════════════", ""];
+        for (const cat of CATEGORY_ORDER) {
+          const items = groceryList[cat];
+          if (!items?.length) continue;
+          lines.push(`${CATEGORY_META[cat].icon} ${CATEGORY_META[cat].label.toUpperCase()}`);
+          for (const item of items) {
+            const qty = item.quantities.map(q => q.display).filter(Boolean).join(" + ");
+            lines.push(`  ☐ ${item.name}${qty ? "  —  " + qty : ""}${item.optional ? " (optional)" : ""}`);
+          }
+          lines.push("");
+        }
+        lines.push("───────────────────────────");
+        lines.push("FICTIVE FITNESS · EPIC EATS VOL. 1");
+        lines.push("fictivefitness.substack.com");
+        navigator.clipboard.writeText(lines.join("\n")).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2200);
+        });
+      };
+
+      if (!unlocked) return <PasswordGate onUnlock={() => setUnlocked(true)} />;
+
+      return (
+        <div style={{ minHeight: "100vh" }}>
+          <style>{css}</style>
+
+          {/* ── Header ── */}
+          <div style={{ background: "linear-gradient(135deg,#0d0d0d 0%,#1a0a0f 100%)", borderBottom: "1px solid #1f1f1f", padding: "24px 20px 0" }}>
+            <div style={{ maxWidth: 980, margin: "0 auto" }}>
+              <div className="header-inner" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "#FF1B6B", fontFamily: "Poppins,sans-serif", fontWeight: 700, letterSpacing: 2.5, marginBottom: 4 }}>
+                    FICTIVE FITNESS
+                  </div>
+                  <h1 className="ff-title" style={{ fontSize: "clamp(34px,7vw,58px)", lineHeight: 1, color: "#fff" }}>
+                    EPIC EATS
+                  </h1>
+                  <div className="ff-title" style={{ fontSize: "clamp(14px,2.5vw,22px)", color: "#FF1B6B", letterSpacing: "0.1em" }}>
+                    GROCERY LIST GENERATOR
+                  </div>
+                </div>
+                <div style={{ color: "#444", fontSize: 12, fontFamily: "Poppins,sans-serif", textAlign: "right", paddingBottom: 10 }}>
+                  <div style={{ color: "#FF1B6B", fontWeight: 600 }}>Vol. 1 · 19 Recipes</div>
+                  <div>Train like a Nerd. Live like a Hero.</div>
+                  <a href="https://fictivefitness.substack.com" target="_blank" style={{ color: "#555", fontSize: 11 }}>fictivefitness.substack.com</a>
+                </div>
+              </div>
+              <div style={{ display: "flex", marginTop: 20, borderBottom: "1px solid #1f1f1f", gap: 2 }}>
+                <button className={`tab-btn ${tab==="recipes"?"active":""}`} onClick={() => setTab("recipes")}>
+                  🍳 SELECT RECIPES
+                  {selCount > 0 && <span className="badge" style={{ marginLeft: 7 }}>{selCount}</span>}
+                </button>
+                <button className={`tab-btn ${tab==="list"?"active":""}`} onClick={() => setTab("list")}>
+                  🛒 GROCERY LIST
+                  {totalItems > 0 && <span className="badge" style={{ marginLeft: 7 }}>{totalItems}</span>}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Content ── */}
+          <div style={{ maxWidth: 980, margin: "0 auto", padding: "28px 20px 60px" }}>
+
+            {/* ═══ RECIPES TAB ═══ */}
+            {tab === "recipes" && <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22, flexWrap: "wrap", gap: 12 }}>
+                <p style={{ color: "#777", fontSize: 13 }}>
+                  Tap a recipe to select it, then set your servings. Ingredients scale automatically.
+                </p>
+                <label className="toggle-wrap" onClick={() => setInclOpt(v => !v)}>
+                  <div className={`toggle-track ${inclOpt?"on":""}`}>
+                    <div className="toggle-thumb" />
+                  </div>
+                  Include optional ingredients
+                </label>
+              </div>
+
+              <div className="recipe-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(275px,1fr))", gap: 12, marginBottom: 32 }}>
+                {RECIPES.map(r => {
+                  const isActive = !!selected[r.id];
+                  const qty = selected[r.id] || r.baseServings;
+                  return (
+                    <div key={r.id} className={`recipe-card ${isActive?"active":""}`} onClick={() => toggleRecipe(r.id)}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 9.5, color: "#FF1B6B", fontFamily: "Poppins,sans-serif", fontWeight: 700, letterSpacing: 1.5, marginBottom: 3 }}>
+                            {r.emoji} {r.character.toUpperCase()} · {r.source}
+                          </div>
+                          <div className="ff-title" style={{ fontSize: 18, color: isActive?"#fff":"#ccc", lineHeight: 1.15 }}>
+                            {r.name}
+                          </div>
+                        </div>
+                        <div style={{
+                          width: 22, height: 22, borderRadius: 5, flexShrink: 0, marginLeft: 4,
+                          border: `2px solid ${isActive?"#FF1B6B":"#2d2d2d"}`,
+                          background: isActive?"#FF1B6B":"transparent",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "all 0.15s",
+                        }}>
+                          {isActive && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: 11, color: "#444", fontFamily: "Poppins,sans-serif" }}>
+                        Base: {r.baseServings} {r.servingUnit}
+                      </div>
+
+                      {isActive && (
+                        <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12, marginTop: 10, borderTop: "1px solid #1f1f1f" }}>
+                          <span style={{ fontSize: 11, color: "#666", fontFamily: "Poppins,sans-serif", flex: 1 }}>SERVINGS:</span>
+                          <button className="qty-btn" onClick={() => nudge(r.id, -1)}>−</button>
+                          <input
+                            className="qty-input" type="number" min="0.5" max="200"
+                            value={qty}
+                            onChange={e => setQty(r.id, e.target.value)}
+                          />
+                          <button className="qty-btn" onClick={() => nudge(r.id, 1)}>+</button>
+                          <span style={{ fontSize: 11, color: "#555", fontFamily: "Poppins,sans-serif", minWidth: 44 }}>{r.servingUnit}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                <button className="primary-btn" disabled={selCount===0} onClick={() => setTab("list")}>
+                  {selCount === 0 ? "SELECT RECIPES ABOVE" : `VIEW GROCERY LIST FOR ${selCount} RECIPE${selCount>1?"S":""} →`}
+                </button>
+                {selCount > 0 && (
+                  <button style={{ background:"none", border:"none", color:"#444", cursor:"pointer", fontSize:13, textDecoration:"underline", fontFamily:"Poppins,sans-serif" }} onClick={() => setSelected({})}>
+                    Clear all
+                  </button>
+                )}
+              </div>
+            </>}
+
+            {/* ═══ GROCERY LIST TAB ═══ */}
+            {tab === "list" && (
+              totalItems === 0 ? (
+                <div className="empty-state">
+                  <div style={{ fontSize: 52, marginBottom: 14 }}>🛒</div>
+                  <div style={{ fontSize: 17, color: "#555", marginBottom: 6 }}>No recipes selected yet.</div>
+                  <div style={{ fontSize: 13, color: "#444", marginBottom: 24 }}>Head back and pick what you want to cook.</div>
+                  <button className="primary-btn" onClick={() => setTab("recipes")}>← PICK YOUR RECIPES</button>
+                </div>
+              ) : (
+                <>
+                  {/* Summary bar */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px", background:"#111", borderRadius:10, border:"1px solid #1f1f1f", marginBottom:24, flexWrap:"wrap", gap:12 }}>
+                    <div style={{ fontSize:13, color:"#777" }}>
+                      <span style={{ color:"#FF1B6B", fontWeight:700 }}>{totalItems} items</span>
+                      {" across "}
+                      <span style={{ color:"#FF1B6B", fontWeight:700 }}>{selCount} recipe{selCount>1?"s":""}</span>
+                      {inclOpt && <span style={{ color:"#555" }}> (incl. optional)</span>}
+                    </div>
+                    <div style={{ display:"flex", gap:10 }}>
+                      <button className={`ghost-btn ${copied?"copied":""}`} onClick={copyList}>
+                        {copied ? "✓ Copied!" : "📋 Copy List"}
+                      </button>
+                      <button className="ghost-btn" onClick={() => setTab("recipes")}>← Edit Recipes</button>
+                    </div>
+                  </div>
+
+                  {/* Recipe pills */}
+                  <div style={{ marginBottom:24 }}>
+                    <div style={{ fontSize:10, color:"#444", letterSpacing:2, marginBottom:10 }}>INCLUDED RECIPES</div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                      {RECIPES.filter(r => selected[r.id]).map(r => (
+                        <div key={r.id} className="pill">
+                          <span>{r.emoji}</span>
+                          <span>{r.name.replace(/"/g,"")}</span>
+                          <span style={{ color:"#555" }}>· {selected[r.id]} {r.servingUnit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Categories */}
+                  {CATEGORY_ORDER.map(cat => {
+                    const items = groceryList[cat];
+                    if (!items?.length) return null;
+                    const meta = CATEGORY_META[cat];
+                    return (
+                      <div key={cat} style={{ marginBottom:28 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10, paddingBottom:8, borderBottom:"1px solid #1f1f1f" }}>
+                          <span style={{ fontSize:18 }}>{meta.icon}</span>
+                          <span className="ff-title" style={{ fontSize:16, color:"#ccc", letterSpacing:"0.05em" }}>{meta.label.toUpperCase()}</span>
+                          <span className="badge">{items.length}</span>
+                        </div>
+                        {items.map((item,i) => (
+                          <div key={i} className="ingredient-row">
+                            <div style={{ width:18, height:18, border:"2px solid #2a2a2a", borderRadius:3, flexShrink:0 }} />
+                            <div style={{ flex:1, fontSize:14, color: item.optional?"#555":"#ddd" }}>
+                              {item.name}
+                              {item.optional && <span style={{ fontSize:10, color:"#444", marginLeft:7, fontStyle:"italic" }}>optional</span>}
+                            </div>
+                            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2 }}>
+                              {item.quantities.map((q,qi) => (
+                                <div key={qi} style={{ fontSize:13, color:"#FF1B6B", fontWeight:700, whiteSpace:"nowrap" }}>
+                                  {q.display || "—"}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+
+                  {/* Footer */}
+                  <div style={{ marginTop:36, padding:"18px", background:"#111", borderRadius:10, border:"1px solid #1f1f1f", textAlign:"center", fontSize:12, color:"#3a3a3a" }}>
+                    <div style={{ color:"#FF1B6B", fontFamily:"'Bebas Neue',Impact,sans-serif", fontSize:16, letterSpacing:2, marginBottom:4 }}>FICTIVE FITNESS · EPIC EATS VOL. 1</div>
+                    <a href="https://fictivefitness.substack.com" target="_blank" style={{ color:"#444" }}>fictivefitness.substack.com</a>
+                    <div style={{ marginTop:4 }}>Train like a Nerd. Live like a Hero.</div>
+                  </div>
+                </>
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
