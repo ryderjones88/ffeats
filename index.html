@@ -530,6 +530,8 @@
     // ─── Password Gate ────────────────────────────────────────────────────
     const ACCESS_CODE = "ffepic26!";
     // Remember the code on this device for 30 days
+    // Every recipe card links to the full book on Stan
+    const STAN_EPIC_EATS = "https://stan.store/fictivefitness/p/eat-like-the-story-fuel-like-a-hero?utm_source=epic_eats_app";
     const EE_KEY = "ee_unlocked_v2";
     const isStoredUnlocked = () => { try { const v = JSON.parse(localStorage.getItem(EE_KEY) || "null"); return !!v && Date.now() - v.ts < 30*24*60*60*1000; } catch { return false; } };
     const storeUnlocked = () => { try { localStorage.setItem(EE_KEY, JSON.stringify({ ts: Date.now() })); } catch {} };
@@ -745,8 +747,12 @@
                         </div>
                       </div>
 
-                      <div style={{ fontSize: 11, color: "#444", fontFamily: "Poppins,sans-serif" }}>
-                        Base: {r.baseServings} {r.servingUnit}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", fontSize: 11, color: "#444", fontFamily: "Poppins,sans-serif" }}>
+                        <span>Base: {r.baseServings} {r.servingUnit}</span>
+                        <a href={STAN_EPIC_EATS} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}
+                          style={{ color: "#FF1B6B", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>
+                          Full recipe in Epic Eats Vol. 1 →
+                        </a>
                       </div>
 
                       {isActive && (
